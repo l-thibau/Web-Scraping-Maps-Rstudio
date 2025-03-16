@@ -1,0 +1,345 @@
+library(RSelenium)
+library(tidyverse)
+library(writexl)
+
+# Conectar ao Selenium Server no Docker
+remDr <- remoteDriver(
+  remoteServerAddr = "localhost", # Endereço do Docker
+  port = 4445,                   # Porta mapeada
+  browserName = "firefox"        # Navegador a ser usado
+)
+
+# Abrir a conexão
+remDr$open()
+
+# Função para coletar informações de uma loja
+coletar_informacoes <- function(remDr) {
+  # Coletar nome
+  nome <- tryCatch({
+    nome <- remDr$findElement(using = "xpath", value = "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[3]/div/div[1]/div/div/div[2]/div[2]/div/div[1]/div[1]/h1")$getElementText()[[1]]
+    cat("\nColetando loja:", nome, "\n")  # Adicionando mensagem de log
+    nome
+  }, error = function(e) {
+    cat("\nErro ao coletar o nome. Retornando NA.\n")
+    NA_character_
+  })
+  
+  # Coletar categoria
+  categoria <- tryCatch({
+    remDr$findElement(using = "xpath", value = "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[3]/div/div[1]/div/div/div[2]/div[2]/div/div[1]/div[2]/div/div[2]/span/span/button")$getElementText()[[1]]
+  }, error = function(e) {
+    cat("\nErro ao coletar a categoria. Retornando NA.\n")
+    NA_character_
+  })
+  
+  # Coletar endereço (segunda tentativa como primeira)
+  endereco <- tryCatch({
+    elemento <- remDr$findElement(using = "xpath", value = "//button[contains(@aria-label, 'Endereço:')]")
+    aria_label <- elemento$getElementAttribute("aria-label")[[1]]
+    # Remover o prefixo "Endereço: " para obter apenas o endereço
+    sub("^Endereço: ", "", aria_label)
+  }, error = function(e) {
+    cat("\nSem endereço identificado na primeira tentativa. \n")
+    NA_character_
+  })
+  
+  # Segunda tentativa de coleta do endereço (XPath alternativo)
+  if (is.na(endereco)) {
+    endereco <- tryCatch({
+      remDr$findElement(using = "xpath", value = "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[3]/div/div[1]/div/div/div[2]/div[9]/div[3]/button/div/div[2]/div[1]")$getElementText()[[1]]
+    }, error = function(e) {
+      cat("\nEndereço não identificado na segunda tentativa. \n")
+      NA_character_
+    })
+    
+    # Aviso sobre o sucesso da segunda tentativa
+    if (!is.na(endereco)) {
+      cat("\n✅ Endereço coletado com sucesso na segunda tentativa. \n")
+    } else {
+      cat("\n❌ Falha na segunda tentativa de coleta do endereço. \n")
+    }
+  }
+  
+  # Coletar Plus Code
+  plus_code <- tryCatch({
+    elemento <- remDr$findElement(using = "xpath", value = "//button[contains(@aria-label, 'Plus Code:')]")
+    aria_label <- elemento$getElementAttribute("aria-label")[[1]]
+    # Remover o prefixo "Plus Code: " para obter apenas o código
+    sub("^Plus Code: ", "", aria_label)
+  }, error = function(e) {
+    cat("\nPlus Code não identificado. \n")
+    NA_character_
+  })
+  
+  # Função para coletar o link do site
+  coletar_link_site <- function(remDr) {
+    site <- tryCatch({
+      elemento <- remDr$findElement(using = "xpath", value = "//a[@class='CsEnBe' and contains(@aria-label, 'Website:')]")
+      elemento$getElementAttribute("href")[[1]]
+    }, error = function(e) {
+      cat("\nSem Site ❌ \n")
+      NA_character_
+    })
+    return(site)
+  }
+  
+  # Coletar site
+  site <- coletar_link_site(remDr)
+  
+  # Coletar telefone
+  celular <- tryCatch({
+    # Localizar o botão pelo atributo aria-label que contém o texto "Telefone"
+    telefone_element <- remDr$findElement(using = "css selector", value = "button[aria-label^='Telefone:']")
+    
+    # Extrair o texto do botão
+    telefone_text <- telefone_element$getElementText()[[1]]
+    
+    # Extrair apenas o número de telefone usando uma expressão regular
+    telefone_numero <- regmatches(telefone_text, regexpr("\\(?\\d{2}\\)?\\s?\\d{4,5}-?\\d{4}", telefone_text))
+    
+    telefone_numero
+  }, error = function(e) {
+    cat("\nSem telefone ❌")
+    NA_character_
+  })
+  
+  # Coletar avaliação (estrelas)
+  estrelas <- tryCatch({
+    remDr$findElement(using = "xpath", value = "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[3]/div/div[1]/div/div/div[2]/div[2]/div/div[1]/div[2]/div/div[1]/div[2]/span[1]/span[1]")$getElementText()[[1]]
+  }, error = function(e) {
+    cat("\nSem estrelas ✨")
+    NA_character_
+  })
+  
+  # Criar um novo tibble com as informações coletadas
+  informacoes <- tibble(
+    Loja = nome,
+    Categoria = categoria,
+    Endereço = endereco,
+    Plus_Code = plus_code,
+    Site = site,
+    Celular = celular,
+    Estrelas = estrelas
+  )
+  
+  return(informacoes)
+}
+
+# Função principal para coletar dados
+pegar_dados <- function(local = "", termo = "", scrolls = 0) {
+  cat("\n\n################\n\nAcessando maps...")
+  remDr$navigate("https://www.google.com.br/maps")
+  Sys.sleep(3)
+  
+  cat("\n\n################\n\nAjustes da página...")
+  search_box <- remDr$findElement(using = "id", value = "searchboxinput")
+  Sys.sleep(4)
+  search_box$click()
+  search_box$clearElement()
+  Sys.sleep(2)
+  search_box$sendKeysToElement(list(local, key = "enter"))
+  Sys.sleep(3)
+  
+  search_box$click()
+  Sys.sleep(3)
+  search_box$clearElement()
+  search_box$sendKeysToElement(list(termo, key = "enter"))
+  Sys.sleep(4)
+  
+  # Tentar encontrar o elemento alvo com o SEGUNDO XPath primeiro
+  elemento_alvo <- tryCatch({
+    remDr$findElement(using = "xpath", "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[1]/div[1]/div[3]/div/a")
+  }, error = function(e) {
+    cat("\n\n❌ Segundo XPath não encontrado. Tentando o primeiro XPath...\n")
+    # Tentar encontrar o elemento alvo com o PRIMEIRO XPath
+    tryCatch({
+      remDr$findElement(using = "xpath", "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[1]/div[1]/div[2]/div[3]/div/div/button")
+    }, error = function(e) {
+      cat("\n\n❌ Primeiro XPath também não encontrado. Encerrando a função.\n")
+      return(NULL)
+    })
+  })
+  
+  if (is.null(elemento_alvo)) {
+    return(NULL)
+  }
+  
+  Sys.sleep(4)
+  elemento_encontrado <- elemento_alvo$getElementText() %>% .[[1]] %>% str_remove("\n")
+  cat("\n\nElemento encontrado:", elemento_encontrado)
+  
+  remDr$mouseMoveToLocation(webElement = elemento_alvo)
+  Sys.sleep(4)
+  
+  cat("\n\n################\n\nCriando objetos de suporte...")
+  
+  # XPath base
+  base_xpath <- "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[1]/div[1]/div["
+  final_xpath <- "]/div/a"
+  xpath_num <- 3L
+  
+  # Dataframe para armazenar todas as informações
+  dados_completos <- tibble(
+    Loja = character(),
+    Categoria = character(),
+    Endereço = character(),
+    Plus_Code = character(),
+    Site = character(),
+    Celular = character(),
+    Estrelas = character()
+  )
+  
+  # Lista para armazenar lojas já coletadas
+  lojas_coletadas <- c()
+  
+  # Lista para armazenar XPaths já coletados com êxito
+  xpaths_com_êxito <- c()
+  
+  # Contador de tentativas de scroll
+  tentativas_scroll <- 0
+  
+  # Contador de elementos não encontrados consecutivos
+  contador_nao_encontrado <- 0
+  
+  # Contador de rolagens sem novos elementos
+  rolagens_sem_novos_elementos <- 0
+  
+  # Dentro do loop principal
+  for (i in seq_len(scrolls)) {
+    cat("\n\nLaço nº:", i)
+    Sys.sleep(4)
+    
+    num <- 1L
+    novos_elementos_encontrados <- FALSE  # Resetar a variável no início de cada laço
+    
+    # Contador de rolagens
+    if (i %% 30 == 0) {  # A cada 30 rolagens
+      cat("\n\n⛔ 30 rolagens realizadas. Ajustando XPath...\n")
+      
+      # Determinar o XPath inicial para este laço
+      if (length(xpaths_com_êxito) >= 6) {
+        xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito) - 6]  # 6 XPaths antes
+        cat('\n\nColetando a partir do sexto XPath anterior com êxito:', xpath_num, "\n")
+      } else {
+        xpath_num <- 3L  # Começar do início
+      }
+    }
+    
+    # Contador de lojas repetidas
+    contador_lojas_repetidas <- 0
+    
+    while (num <= 40) {
+      xpath_completo <- paste0(base_xpath, xpath_num, final_xpath)
+      cat("\n\nXPath:", xpath_completo)
+      
+      elemento_regiao <- tryCatch({
+        remDr$findElement("xpath", xpath_completo)
+      }, error = function(e) NULL)
+      
+      if (!is.null(elemento_regiao)) {
+        elemento_regiao$clickElement()
+        cat("\n\n✅ Clicado!")
+        Sys.sleep(15)
+        
+        informacoes_loja <- coletar_informacoes(remDr)
+        
+        if (!informacoes_loja$Loja %in% lojas_coletadas) {
+          dados_completos <- bind_rows(dados_completos, informacoes_loja)
+          lojas_coletadas <- c(lojas_coletadas, informacoes_loja$Loja)
+          xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
+          
+          contador_nao_encontrado <- 0
+          novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
+          contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
+        } else {
+          cat("\n\n⚠️ Loja repetida:", informacoes_loja$Loja, "\n")
+          contador_lojas_repetidas <- contador_lojas_repetidas + 1
+          
+          if (contador_lojas_repetidas >= 2) {
+            cat("\n\n⛔ 2 lojas repetidas seguidas. Usando último XPath com êxito.\n")
+            if (length(xpaths_com_êxito) > 0) {
+              xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
+              cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
+            }
+            contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
+          }
+        }
+        
+        if (length(lojas_coletadas) >= 300) {
+          cat("\n\n⛔ 300 lojas coletadas. Encerrando a função...\n")
+          return(dados_completos)
+        }
+      } else {
+        cat("\n\n❌ Elemento não encontrado. Pulando para o próximo XPath.\n")
+        contador_nao_encontrado <- contador_nao_encontrado + 1
+        
+        if (contador_nao_encontrado >= 2) {
+          cat("\n\n⛔ 2 elementos não encontrados consecutivos. Executando rolagem...\n")
+          cat("\n\nRolando a página...\n\n################")
+          for (k in 1:28) {  # Faz 28 rolagens por iteração
+            elemento_alvo$sendKeysToElement(list(key = "page_down"))
+            Sys.sleep(0.4)
+          }
+          
+          # Adicionar uma pequena espera após o scroll
+          Sys.sleep(10)  # Espera de 10 segundos após a rolagem da página
+          
+          # Ajustar o xpath_num para o último XPath com êxito
+          if (length(xpaths_com_êxito) > 0) {
+            xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
+            cat("\n\n⛔ Ajustando xpath_num para o último XPath com êxito:", xpath_num, "\n")
+          }
+          
+          contador_nao_encontrado <- 0
+        }
+      }
+      
+      xpath_num <- xpath_num + 2L  # Avançar para o próximo XPath
+      num <- num + 1L
+      cat("\n\nLaçamos!")
+    }
+    
+    # Verificar se novos elementos foram encontrados após o loop interno
+    if (!novos_elementos_encontrados) {
+      rolagens_sem_novos_elementos <- rolagens_sem_novos_elementos + 1
+      cat("\n\n⚠️ Nenhum novo elemento encontrado após a rolagem. Contador:", rolagens_sem_novos_elementos, "\n")
+    } else {
+      rolagens_sem_novos_elementos <- 0  # Resetar o contador se novos elementos forem encontrados
+    }
+    
+    if (rolagens_sem_novos_elementos >= 2) {
+      cat("\n\n🤖 2 rolagens consecutivas sem novos elementos. Encerrando a função...\n")
+      return(dados_completos)
+    }
+    
+    cat("\n\nRolando a página...\n\n################")
+    for (k in 1:28) {  # Faz 28 rolagens por iteração
+      elemento_alvo$sendKeysToElement(list(key = "page_down"))
+      Sys.sleep(0.4)
+    }
+    
+    # Adicionar uma pequena espera após o scroll
+    Sys.sleep(10)  # Espera de 10 segundos após a rolagem da página
+    
+    # Regressão de 3 XPaths após cada rolagem
+    if (length(xpaths_com_êxito) >= 6) {
+      xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito) - 3]  # 3 XPaths antes
+      cat('\n\nRegressão de 3 XPath após rolagem. Coletando a partir do penultimo XPath anterior com êxito:', xpath_num, "\n")
+    }
+    
+    # Adicionar uma pequena espera após o scroll
+    Sys.sleep(4)
+  }
+  
+  cat("\n\nFim da função💕")
+  return(dados_completos)
+}
+
+# Chamar a função para coletar dados
+dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Atacadista de utilidades domésticas", scrolls = 100)
+
+# Remover duplicatas (caso alguma tenha passado)
+dados_lojas_feira <- dados_lojas_feira %>% distinct(Loja, .keep_all = TRUE)
+
+# Exportar para Excel
+write_xlsx(dados_lojas_feira, "dados_lojas_feira.xlsx")
