@@ -255,8 +255,8 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           cat("\n\n⚠️ Loja repetida:", informacoes_loja$Loja, "\n")
           contador_lojas_repetidas <- contador_lojas_repetidas + 1
           
-          if (contador_lojas_repetidas >= 2) {
-            cat("\n\n⛔ 2 lojas repetidas seguidas. Usando último XPath com êxito.\n")
+          if (contador_lojas_repetidas >= 3) {
+            cat("\n\n⛔3 lojas repetidas seguidas. Usando último XPath com êxito.\n")
             if (length(xpaths_com_êxito) > 0) {
               xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
               cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
@@ -343,3 +343,4 @@ dados_lojas_feira <- dados_lojas_feira %>% distinct(Loja, .keep_all = TRUE)
 
 # Exportar para Excel
 write_xlsx(dados_lojas_feira, "dados_lojas_feira.xlsx")
+
