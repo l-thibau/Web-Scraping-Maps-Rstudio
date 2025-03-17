@@ -190,7 +190,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
   )
   
   # Lista para armazenar lojas já coletadas
-  lojas_coletadas <- c()
+  lojas_coletadas <- list()
   
   # Lista para armazenar XPaths já coletados com êxito
   xpaths_com_êxito <- c()
@@ -243,26 +243,39 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
         
         informacoes_loja <- coletar_informacoes(remDr)
         
-        if (!is.null(informacoes_loja) && nrow(informacoes_loja) > 0 && "Loja" %in% colnames(informacoes_loja) && !informacoes_loja$Loja %in% lojas_coletadas) {
-          dados_completos <- bind_rows(dados_completos, informacoes_loja)
-          lojas_coletadas <- c(lojas_coletadas, informacoes_loja$Loja)
-          xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
+        if (!is.null(informacoes_loja) && nrow(informacoes_loja) > 0 && "Loja" %in% colnames(informacoes_loja)) {
+          # Verificar se a loja já existe no banco de dados com todas as informações idênticas
+          loja_repetida <- any(sapply(lojas_coletadas, function(loja) {
+            all(loja$Loja == informacoes_loja$Loja,
+                loja$Categoria == informacoes_loja$Categoria,
+                loja$Endereço == informacoes_loja$Endereço,
+                loja$Plus_Code == informacoes_loja$Plus_Code,
+                loja$Site == informacoes_loja$Site,
+                loja$Celular == informacoes_loja$Celular,
+                loja$Estrelas == informacoes_loja$Estrelas)
+          }))
           
-          contador_nao_encontrado <- 0  # Resetar o contador de elementos não encontrados
-          novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
-          contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
-          cat("\n🙌 Novo elemento encontrado")
-        } else {
-          cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
-          contador_lojas_repetidas <- contador_lojas_repetidas + 1
-          
-          if (contador_lojas_repetidas >= 3) {
-            cat("\n\n⛔3 lojas repetidas seguidas. Usando último XPath com êxito.\n")
-            if (length(xpaths_com_êxito) > -1) {
-              xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
-              cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
-            }
+          if (!loja_repetida) {
+            dados_completos <- bind_rows(dados_completos, informacoes_loja)
+            lojas_coletadas <- c(lojas_coletadas, list(informacoes_loja))
+            xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
+            
+            contador_nao_encontrado <- 0  # Resetar o contador de elementos não encontrados
+            novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
             contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
+            cat("\n🙌 Novo elemento encontrado")
+          } else {
+            cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
+            contador_lojas_repetidas <- contador_lojas_repetidas + 1
+            
+            if (contador_lojas_repetidas >= 3) {
+              cat("\n\n⛔3 lojas repetidas seguidas. Usando último XPath com êxito.\n")
+              if (length(xpaths_com_êxito) > -1) {
+                xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
+                cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
+              }
+              contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
+            }
           }
         }
       } else {
