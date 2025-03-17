@@ -251,9 +251,9 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           contador_nao_encontrado <- 0  # Resetar o contador de elementos não encontrados
           novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
           contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
-          cat("\n 🙌 Novo elemento encontrado")
+          cat("\n🙌 Novo elemento encontrado")
         } else {
-          cat("\n\n⚠️ Loja repetida:", informacoes_loja$Loja, "\n")
+          cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
           contador_lojas_repetidas <- contador_lojas_repetidas + 1
           
           if (contador_lojas_repetidas >= 3) {
@@ -287,7 +287,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
       
       xpath_num <- xpath_num + 2L  # Avançar para o próximo XPath
       num <- num + 1L
-      cat("\n\nLaçamos!")
+      cat("\n\nLaço!")
     }
     
     # Verificar se novos elementos foram encontrados após o loop interno
