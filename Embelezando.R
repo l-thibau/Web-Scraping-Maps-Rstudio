@@ -243,7 +243,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
         
         informacoes_loja <- coletar_informacoes(remDr)
         
-        if (!is.null(informacoes_loja) && !informacoes_loja$Loja %in% lojas_coletadas) {
+        if (!is.null(informacoes_loja) && nrow(informacoes_loja) > 0 && "Loja" %in% colnames(informacoes_loja) && !informacoes_loja$Loja %in% lojas_coletadas) {
           dados_completos <- bind_rows(dados_completos, informacoes_loja)
           lojas_coletadas <- c(lojas_coletadas, informacoes_loja$Loja)
           xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
@@ -328,7 +328,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Chamar a função para coletar dados
-dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Atacadista de utilidades domésticas", scrolls = 6)
+dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de Departamento", scrolls = 6)
 
 # Remover duplicatas (caso alguma tenha passado)
 dados_lojas_feira <- dados_lojas_feira %>% distinct(Loja, .keep_all = TRUE)
