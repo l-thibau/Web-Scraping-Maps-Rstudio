@@ -251,9 +251,9 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           contador_nao_encontrado <- 0
           novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
           contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
-          cat("\n\n✅ Novo elemento encontrado\n")
+          cat("\n\n 🙌 Novo elemento encontrado\n")
         } else {
-          cat("\n\n⚠️ Loja repetida ou nula:", informacoes_loja$Loja, "\n")
+          cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
           contador_lojas_repetidas <- contador_lojas_repetidas + 1
           
           if (contador_lojas_repetidas >= 3) {
