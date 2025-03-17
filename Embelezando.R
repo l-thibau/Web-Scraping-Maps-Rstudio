@@ -255,7 +255,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
                 loja$Estrelas == informacoes_loja$Estrelas)
           }))
           
-          if (!loja_repetida) {
+          if (!isTRUE(loja_repetida)) {
             dados_completos <- bind_rows(dados_completos, informacoes_loja)
             lojas_coletadas <- c(lojas_coletadas, list(informacoes_loja))
             xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
