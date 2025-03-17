@@ -248,12 +248,12 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           lojas_coletadas <- c(lojas_coletadas, informacoes_loja$Loja)
           xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
           
-          contador_nao_encontrado <- 0
+          contador_nao_encontrado <- 0  # Resetar o contador de elementos não encontrados
           novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
           contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
           cat("\n 🙌 Novo elemento encontrado")
         } else {
-          cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
+          cat("\n\n⚠️ Loja repetida:", informacoes_loja$Loja, "\n")
           contador_lojas_repetidas <- contador_lojas_repetidas + 1
           
           if (contador_lojas_repetidas >= 3) {
@@ -267,7 +267,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
         }
       } else {
         cat("\n\n❌ Elemento não encontrado. Pulando para o próximo XPath.\n")
-        contador_nao_encontrado <- contador_nao_encontrado + 1
+        contador_nao_encontrado <- contador_nao_encontrado + 1  # Incrementa o contador
         
         if (contador_nao_encontrado >= 2) {
           cat("\n\n⛔ 2 elementos não encontrados consecutivos. Executando rolagem...\n")
@@ -277,17 +277,11 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
             Sys.sleep(0.4)
           }
           
-          # Adicionar uma pequena espera após o scroll
-          Sys.sleep(10)  # Espera de 10 segundos após a rolagem da página
-          
-          # Ajustar o xpath_num para o último XPath com êxito
-          if (length(xpaths_com_êxito) > 0) {
-            xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
-            cat("\n\n⛔ Ajustando xpath_num para o último XPath com êxito:", xpath_num, "\n")
+          # Verifica se houve duas ocorrências consecutivas
+          if (contador_nao_encontrado >= 4) {
+            cat("\n\n🎉 Código finalizado. Fim da página!\n")
+            break  # Encerra o loop ou o código inteiro
           }
-          
-          contador_nao_encontrado <- 0
-          contador_fenomenos_nao_encontrados <- contador_fenomenos_nao_encontrados + 1
         }
       }
       
@@ -305,7 +299,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
       cat("\n\n✅ Novos elementos encontrados. Contador de fenômenos 'Não encontrados' resetado.\n")
     }
     
-    if (contador_fenomenos_nao_encontrados >= 2) {
+    if (contador_fenomenos_nao_encontrados >= 1) {
       cat("\n\n🤖 2 fenômenos consecutivos sem novos elementos. Encerrando a função...\n")
       return(dados_completos)
     }
