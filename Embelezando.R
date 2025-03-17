@@ -56,7 +56,7 @@ coletar_informacoes <- function(remDr) {
     if (!is.na(endereco)) {
       cat("\n✅ Endereço coletado com sucesso na segunda tentativa. \n")
     } else {
-      cat("\n❌ Falha na segunda tentativa de coleta do endereço. \n")
+      cat("\n 🗺 Falha na segunda tentativa de coleta do endereço. \n")
     }
   }
   
