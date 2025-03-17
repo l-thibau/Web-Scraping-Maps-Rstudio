@@ -343,8 +343,19 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 # Chamar a função para coletar dados
 dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de Departamento", scrolls = 6)
 
-# Remover duplicatas (caso alguma tenha passado)
-dados_lojas_feira <- dados_lojas_feira %>% distinct(Loja, .keep_all = TRUE)
+# Função personalizada para remover duplicatas considerando múltiplas colunas
+remover_duplicatas <- function(dados, colunas) {
+  dados %>%
+    group_by(across(all_of(colunas))) %>%
+    filter(row_number() == 1) %>%
+    ungroup()
+}
+
+# Colunas que devem ser consideradas para identificar duplicatas
+colunas_para_verificar <- c("Loja", "Categoria", "Endereço", "Plus_Code", "Site", "Celular", "Estrelas")
+
+# Remover duplicatas considerando as colunas especificadas
+dados_lojas_feira <- remover_duplicatas(dados_lojas_feira, colunas_para_verificar)
 
 # Exportar para Excel
 write_xlsx(dados_lojas_feira, "dados_lojas_feira.xlsx")
