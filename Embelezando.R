@@ -258,7 +258,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           
           if (contador_lojas_repetidas >= 3) {
             cat("\n\n⛔3 lojas repetidas seguidas. Usando último XPath com êxito.\n")
-            if (length(xpaths_com_êxito) > -2) {
+            if (length(xpaths_com_êxito) > -1) {
               xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
               cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
             }
