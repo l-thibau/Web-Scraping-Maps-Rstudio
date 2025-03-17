@@ -56,7 +56,7 @@ coletar_informacoes <- function(remDr) {
     if (!is.na(endereco)) {
       cat("\n✅ Endereço coletado com sucesso na segunda tentativa. \n")
     } else {
-      cat("\n❌ Falha na segunda tentativa de coleta do endereço. \n")
+      cat("\n 🗺 Falha na segunda tentativa de coleta do endereço. \n")
     }
   }
   
@@ -190,7 +190,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
   )
   
   # Lista para armazenar lojas já coletadas
-  lojas_coletadas <- c()
+  lojas_coletadas <- list()
   
   # Lista para armazenar XPaths já coletados com êxito
   xpaths_com_êxito <- c()
@@ -243,31 +243,44 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
         
         informacoes_loja <- coletar_informacoes(remDr)
         
-        if (!is.null(informacoes_loja) && !informacoes_loja$Loja %in% lojas_coletadas) {
-          dados_completos <- bind_rows(dados_completos, informacoes_loja)
-          lojas_coletadas <- c(lojas_coletadas, informacoes_loja$Loja)
-          xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
+        if (!is.null(informacoes_loja) && nrow(informacoes_loja) > 0 && "Loja" %in% colnames(informacoes_loja)) {
+          # Verificar se a loja já existe no banco de dados com todas as informações idênticas
+          loja_repetida <- any(sapply(lojas_coletadas, function(loja) {
+            all(loja$Loja == informacoes_loja$Loja,
+                loja$Categoria == informacoes_loja$Categoria,
+                loja$Endereço == informacoes_loja$Endereço,
+                loja$Plus_Code == informacoes_loja$Plus_Code,
+                loja$Site == informacoes_loja$Site,
+                loja$Celular == informacoes_loja$Celular,
+                loja$Estrelas == informacoes_loja$Estrelas)
+          }))
           
-          contador_nao_encontrado <- 0
-          novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
-          contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
-          cat("\n\n✅ Novo elemento encontrado\n")
-        } else {
-          cat("\n\n⚠️ Loja repetida ou nula:", informacoes_loja$Loja, "\n")
-          contador_lojas_repetidas <- contador_lojas_repetidas + 1
-          
-          if (contador_lojas_repetidas >= 3) {
-            cat("\n\n⛔3 lojas repetidas seguidas. Usando último XPath com êxito.\n")
-            if (length(xpaths_com_êxito) > -1) {
-              xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
-              cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
-            }
+          if (!isTRUE(loja_repetida)) {
+            dados_completos <- bind_rows(dados_completos, informacoes_loja)
+            lojas_coletadas <- c(lojas_coletadas, list(informacoes_loja))
+            xpaths_com_êxito <- c(xpaths_com_êxito, xpath_num)  # Adicionar XPath à lista de XPaths com êxito
+            
+            contador_nao_encontrado <- 0  # Resetar o contador de elementos não encontrados
+            novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
             contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
+            cat("\n🙌 Novo elemento encontrado")
+          } else {
+            cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
+            contador_lojas_repetidas <- contador_lojas_repetidas + 1
+            
+            if (contador_lojas_repetidas >= 3) {
+              cat("\n\n⛔3 lojas repetidas seguidas. Usando último XPath com êxito.\n")
+              if (length(xpaths_com_êxito) > -2) {
+                xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
+                cat("\n\nUsando último XPath com êxito:", xpath_num, "\n")
+              }
+              contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
+            }
           }
         }
       } else {
         cat("\n\n❌ Elemento não encontrado. Pulando para o próximo XPath.\n")
-        contador_nao_encontrado <- contador_nao_encontrado + 1
+        contador_nao_encontrado <- contador_nao_encontrado + 1  # Incrementa o contador
         
         if (contador_nao_encontrado >= 2) {
           cat("\n\n⛔ 2 elementos não encontrados consecutivos. Executando rolagem...\n")
@@ -277,23 +290,17 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
             Sys.sleep(0.4)
           }
           
-          # Adicionar uma pequena espera após o scroll
-          Sys.sleep(10)  # Espera de 10 segundos após a rolagem da página
-          
-          # Ajustar o xpath_num para o último XPath com êxito
-          if (length(xpaths_com_êxito) > 0) {
-            xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito)]
-            cat("\n\n⛔ Ajustando xpath_num para o último XPath com êxito:", xpath_num, "\n")
+          # Verifica se houve duas ocorrências consecutivas
+          if (contador_nao_encontrado >= 4) {
+            cat("\n\n🎉 Código finalizado. Fim da página!\n")
+            break  # Encerra o loop ou o código inteiro
           }
-          
-          contador_nao_encontrado <- 0
-          contador_fenomenos_nao_encontrados <- contador_fenomenos_nao_encontrados + 1
         }
       }
       
       xpath_num <- xpath_num + 2L  # Avançar para o próximo XPath
       num <- num + 1L
-      cat("\n\nLaçamos!")
+      cat("\n\nLaço!")
     }
     
     # Verificar se novos elementos foram encontrados após o loop interno
@@ -305,7 +312,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
       cat("\n\n✅ Novos elementos encontrados. Contador de fenômenos 'Não encontrados' resetado.\n")
     }
     
-    if (contador_fenomenos_nao_encontrados >= 2) {
+    if (contador_fenomenos_nao_encontrados >= 1) {
       cat("\n\n🤖 2 fenômenos consecutivos sem novos elementos. Encerrando a função...\n")
       return(dados_completos)
     }
@@ -334,10 +341,21 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Chamar a função para coletar dados
-dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Atacadista de utilidades domésticas", scrolls = 6)
+dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de Presentes", scrolls = 5)
 
-# Remover duplicatas (caso alguma tenha passado)
-dados_lojas_feira <- dados_lojas_feira %>% distinct(Loja, .keep_all = TRUE)
+# Função personalizada para remover duplicatas considerando múltiplas colunas
+remover_duplicatas <- function(dados, colunas) {
+  dados %>%
+    group_by(across(all_of(colunas))) %>%
+    filter(row_number() == 1) %>%
+    ungroup()
+}
+
+# Colunas que devem ser consideradas para identificar duplicatas
+colunas_para_verificar <- c("Loja", "Categoria", "Endereço", "Plus_Code", "Site", "Celular", "Estrelas")
+
+# Remover duplicatas considerando as colunas especificadas
+dados_lojas_feira <- remover_duplicatas(dados_lojas_feira, colunas_para_verificar)
 
 # Exportar para Excel
 write_xlsx(dados_lojas_feira, "dados_lojas_feira.xlsx")
