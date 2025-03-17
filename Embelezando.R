@@ -341,7 +341,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Chamar a função para coletar dados
-dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de Departamento", scrolls = 6)
+dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de Presentes", scrolls = 5)
 
 # Função personalizada para remover duplicatas considerando múltiplas colunas
 remover_duplicatas <- function(dados, colunas) {
