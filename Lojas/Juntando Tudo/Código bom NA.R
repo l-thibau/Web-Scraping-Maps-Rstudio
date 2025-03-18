@@ -21,13 +21,18 @@ extrair_endereco <- function(endereco) {
   bairro <- str_extract(endereco, "(?<=-\\s)[^,]+")
   cidade <- str_extract(endereco, "(?<=,\\s)[^-]+")
   
-  # Verificar se bairro ou cidade contêm números, hífens ou vírgulas
-  if (!is.na(bairro) && str_detect(bairro, "[0-9,-]")) {
-    bairro <- NA
+  # Verificar se bairro ou cidade contêm números, hífens, texto único 'BA' ou apenas uma letra
+  if (!is.na(bairro) && (str_detect(bairro, "[0-9,-]") || str_detect(bairro, "^BA$") || str_length(str_trim(bairro)) == 1)) {
+    bairro <- "NA"
   }
   
-  if (!is.na(cidade) && str_detect(cidade, "[0-9,-]")) {
-    cidade <- NA
+  if (!is.na(cidade) && (str_detect(cidade, "[0-9,-]") || str_length(str_trim(cidade)) == 1)) {
+    cidade <- "NA"
+  }
+  
+  # Verificar se o bairro está vazio e substituir por "NA"
+  if (is.na(bairro) || str_trim(bairro) == "") {
+    bairro <- "NA"
   }
   
   tibble(
@@ -35,19 +40,6 @@ extrair_endereco <- function(endereco) {
     Bairro = str_trim(bairro),
     Cidade = str_trim(cidade)
   )
-}
-
-# Função para extrair bairro e cidade do Plus Code
-extrair_bairro_cidade <- function(plus_code) {
-  # Regex para capturar o bairro e a cidade
-  padrao <- "[A-Z0-9+]+\\s([^,]+),\\s([^-]+)\\s-\\s[A-Z]{2}"
-  
-  # Extrair bairro e cidade
-  bairro <- str_match(plus_code, padrao)[,2]
-  cidade <- str_match(plus_code, padrao)[,3]
-  
-  # Retornar como uma lista
-  return(list(bairro = bairro, cidade = cidade))
 }
 
 # Aplicar a função e criar as novas colunas
@@ -58,12 +50,53 @@ dados <- dados %>%
 dados <- dados %>%
   rowwise() %>%
   mutate(
-    Bairro = ifelse(is.na(Bairro), extrair_bairro_cidade(Endereço)$bairro, Bairro),
-    Cidade = ifelse(is.na(Cidade), extrair_bairro_cidade(Endereço)$cidade, Cidade)
+    Bairro = ifelse(is.na(Bairro) || Bairro == "NA", extrair_bairro_cidade(Endereço)$bairro, Bairro),
+    Cidade = ifelse(is.na(Cidade) || Cidade == "NA", extrair_bairro_cidade(Endereço)$cidade, Cidade)
   )
 
 # Salvar o resultado em uma nova planilha
 write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx")
 
+transformar_bairro <- function(bairro) {
+  # Verificar se o bairro é vazio ou não é uma string
+  if (is.null(bairro) || bairro == "" || !is.character(bairro)) {
+    return("NA")
+  }
+  
+  # Verificar se o texto contém números, hífen, "BA" ou uma letra isolada
+  if (grepl("\\d|[-]|\\bBA\\b|\\b\\w\\b", bairro)) {
+    return("NA")
+  }
+  
+  return(bairro)
+}
 
+# Teste
+bairro <- "bairro"
+texto_bairro <- "BA"
+print(transformar_bairro(texto_bairro))  # Saída: "NA"
+
+
+# Carregar pacotes necessários
+library(readxl)
+library(openxlsx)
+
+# Carregar a planilha
+df <- read_excel("C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx")
+
+# Função para modificar os bairros
+modificar_bairro <- function(bairro) {
+  if (is.na(bairro) || trimws(bairro) == "" || grepl("-", bairro) || grepl("\\d", bairro)) {
+    return("NA")
+  }
+  return(bairro)
+}
+
+df_lojas <- read_excel("C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx")
+
+# Aplicar a função à coluna "Bairro"
+df_lojas$Bairro <- sapply(df_lojas$Bairro, modificar_bairro)
+
+# Salvar a planilha modificada
+write.xlsx(df_lojas, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx", rowNames = FALSE)
 
