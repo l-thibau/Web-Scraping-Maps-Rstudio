@@ -2,8 +2,6 @@
 library(tidyverse)
 library(readxl)
 library(writexl)
-library(stringr)
-library(dplyr)
 
 # Definir o caminho da pasta
 caminho_pasta <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo"
@@ -37,30 +35,10 @@ extrair_endereco <- function(endereco) {
   )
 }
 
-# Função para extrair bairro e cidade do Plus Code
-extrair_bairro_cidade <- function(plus_code) {
-  # Regex para capturar o bairro e a cidade
-  padrao <- "[A-Z0-9+]+\\s([^,]+),\\s([^-]+)\\s-\\s[A-Z]{2}"
-  
-  # Extrair bairro e cidade
-  bairro <- str_match(plus_code, padrao)[,2]
-  cidade <- str_match(plus_code, padrao)[,3]
-  
-  # Retornar como uma lista
-  return(list(bairro = bairro, cidade = cidade))
-}
-
 # Aplicar a função e criar as novas colunas
 dados <- dados %>%
   bind_cols(map_dfr(dados$Endereço, extrair_endereco))
 
-# Verificar e corrigir NAs usando o segundo código
-dados <- dados %>%
-  rowwise() %>%
-  mutate(
-    Bairro = ifelse(is.na(Bairro), extrair_bairro_cidade(Endereço)$bairro, Bairro),
-    Cidade = ifelse(is.na(Cidade), extrair_bairro_cidade(Endereço)$cidade, Cidade)
-  )
-
 # Salvar o resultado em uma nova planilha
 write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/Enderecos_Processados.xlsx")
+
