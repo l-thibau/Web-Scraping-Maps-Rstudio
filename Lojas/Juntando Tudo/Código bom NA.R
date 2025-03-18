@@ -1,4 +1,4 @@
-# Instalar e carregar pacotes
+#  carregar pacotes
 library(tidyverse)
 library(readxl)
 library(writexl)
@@ -63,6 +63,7 @@ dados <- dados %>%
   )
 
 # Salvar o resultado em uma nova planilha
-write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/Enderecos_Processados.xlsx")
+write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx")
+
 
 
