@@ -6,7 +6,7 @@ library(stringr)
 library(dplyr)
 
 # Definir o caminho da pasta
-caminho_pasta <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo"
+caminho_pasta <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Salvador"
 
 # Listar todos os arquivos .xlsx na pasta
 arquivos <- list.files(caminho_pasta, pattern = "\\.xlsx$", full.names = TRUE)
@@ -102,7 +102,7 @@ dados <- dados %>%
   )
 
 # Salvar o resultado em uma nova planilha
-write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx")
+write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Salvador/Coleta_Unida_Salvador/Enderecos_Processados2.xlsx")
 
 # Função para modificar os bairros
 modificar_bairro <- function(bairro) {
@@ -128,11 +128,10 @@ transformar_cidade <- function(cidade) {
 }
 
 # Carregar a planilha
-df_lojas <- read_excel("C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx")
-
+df_lojas <- read_excel("C:\\Users\\leona\\Github\\Web-Scraping-Maps-Rstudio\\Lojas\\Salvador\\Coleta_Unida_Salvador\\Enderecos_Processados2.xlsx")
 # Aplicar a função à coluna "Bairro"
 df_lojas$Bairro <- sapply(df_lojas$Bairro, modificar_bairro)
 
 # Salvar a planilha modificada
-write.xlsx(df_lojas, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Enderecos_Processados.xlsx", rowNames = FALSE)
-         
+write_xlsx(df_lojas, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Salvador/Coleta_Unida_Salvador/Enderecos_Processados2.xlsx")         
+
