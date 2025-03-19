@@ -57,3 +57,25 @@ if (num_lojas_repetidas > 0) {
 } else {
   cat("Nenhuma loja repetida encontrada.\n")
 }
+
+# Verificar se os dados foram combinados corretamente
+if (nrow(dados_combinados) == 0) {
+  stop("Nenhum dado foi lido ou combinado.")
+}
+
+# Remover lojas repetidas com base no nome e bairro, mantendo apenas uma ocorrência
+dados_unicos <- dados_combinados %>%
+  distinct(Loja, Bairro, .keep_all = TRUE)  # Remove duplicatas com base em "Loja" e "Bairro"
+
+# Verificar o número de lojas após a remoção de duplicatas
+num_lojas_unicas <- nrow(dados_unicos)
+cat("Número de lojas únicas após remoção de duplicatas:", num_lojas_unicas, "\n")
+
+# Definir o caminho e o nome do arquivo de saída
+caminho_saida <- file.path(caminho_pasta, "Dados_Combinados_Unicos.xlsx")
+
+# Salvar o dataframe com lojas únicas em um novo arquivo .xlsx
+write_xlsx(dados_unicos, caminho_saida)
+
+# Mensagem de sucesso
+cat("As lojas repetidas foram removidas e os dados únicos foram salvos em:", caminho_saida, "\n")
