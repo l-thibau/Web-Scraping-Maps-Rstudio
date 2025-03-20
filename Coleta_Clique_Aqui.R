@@ -111,6 +111,36 @@ coletar_informacoes <- function(remDr) {
     NA_character_
   })
   
+  # Coletar URL da página atual
+  url_atual <- tryCatch({
+    remDr$getCurrentUrl()[[1]]
+  }, error = function(e) {
+    cat("\nErro ao coletar URL. Retornando NA.\n")
+    NA_character_
+  })
+  
+  # Se o URL foi capturado com sucesso, extrair coordenadas
+  loc <- tryCatch({
+    if (!is.na(url_atual)) {
+      latitude <- str_extract(url_atual, "(?<=!3d)-?[0-9]+\\.[0-9]+")
+      longitude <- str_extract(url_atual, "(?<=!4d)-?[0-9]+\\.[0-9]+")
+      
+      if (!is.na(latitude) & !is.na(longitude)) {
+        loc <- paste0(latitude, ", ", longitude)
+        cat("\n🚓 Coordenada coletada com sucesso:", loc, "\n") # Mensagem no console
+      } else {
+        cat("\n🚩️ Coordenada não encontrada no URL.\n")
+        loc <- NA_character_
+      }
+    } else {
+      loc <- NA_character_
+    }
+    loc
+  }, error = function(e) {
+    cat("\nErro ao processar coordenadas. Retornando NA.\n")
+    NA_character_
+  })
+  
   # Criar um novo tibble com as informações coletadas
   informacoes <- tibble(
     Loja = nome,
@@ -119,7 +149,8 @@ coletar_informacoes <- function(remDr) {
     Plus_Code = plus_code,
     Site = site,
     Celular = celular,
-    Estrelas = estrelas
+    Estrelas = estrelas,
+    Loc = loc # Adicionando a nova coluna de coordenadas
   )
   
   return(informacoes)
@@ -292,7 +323,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           
           # Verifica se houve duas ocorrências consecutivas
           if (contador_nao_encontrado >= 4) {
-            cat("\n\n🎉 Código finalizado. Fim da página!\n")
+            cat("\n\n🎉 Código irá finalizar daqui há pouco. Tenha calma!\n")
             break  # Encerra o loop ou o código inteiro
           }
         }
