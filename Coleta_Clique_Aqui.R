@@ -323,7 +323,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           
           # Verifica se houve duas ocorrências consecutivas
           if (contador_nao_encontrado >= 4) {
-            cat("\n\n🎉 Código irá finalizar daqui há pouco. Tenha calma!\n")
+            cat("\n\n🎉 Código irá finalizar daqui a pouco. Tenha calma!\n")
             break  # Encerra o loop ou o código inteiro
           }
         }
@@ -372,7 +372,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Chamar a função para coletar dados
-dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de utensílios de cozinha", scrolls = 4)
+dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de variedades", scrolls = 2)
 
 # Função personalizada para remover duplicatas considerando múltiplas colunas
 remover_duplicatas <- function(dados, colunas) {
@@ -389,5 +389,5 @@ colunas_para_verificar <- c("Loja", "Categoria", "Endereço", "Plus_Code", "Site
 dados_lojas_feira <- remover_duplicatas(dados_lojas_feira, colunas_para_verificar)
 
 # Exportar para Excel
-write_xlsx(dados_lojas_feira, "dados_lojas_utensilioscozinha_feira.xlsx")
+write_xlsx(dados_lojas_feira, "dados_lojas_de variedades_feira.xlsx")
 
