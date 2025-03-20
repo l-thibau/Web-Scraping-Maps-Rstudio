@@ -294,7 +294,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
             contador_nao_encontrado <- 0  # Resetar o contador de elementos não encontrados
             novos_elementos_encontrados <- TRUE  # Marcar que novos elementos foram encontrados
             contador_lojas_repetidas <- 0  # Zerar o contador de lojas repetidas
-            cat("\n🙌 Novo elemento encontrado")
+            cat("\n🙌 Novo elemento encontrado ")
           } else {
             cat("\n\n⚠️ Loja repetida", informacoes_loja$Loja, "\n")
             contador_lojas_repetidas <- contador_lojas_repetidas + 1
@@ -372,7 +372,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Chamar a função para coletar dados
-dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de utensílios de cozinha", scrolls = 5)
+dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "Loja de utensílios de cozinha", scrolls = 4)
 
 # Função personalizada para remover duplicatas considerando múltiplas colunas
 remover_duplicatas <- function(dados, colunas) {
