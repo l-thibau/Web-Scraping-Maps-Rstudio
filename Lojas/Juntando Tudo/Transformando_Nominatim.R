@@ -5,7 +5,7 @@ library(dplyr)
 library(writexl)
 
 # Caminho do arquivo
-arquivo_xlsx <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/teste.xlsx"
+arquivo_xlsx <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/rodar_de_novo_here_maps.xlsx"
 
 # Leia o arquivo
 dados <- read_excel(arquivo_xlsx)
@@ -16,7 +16,11 @@ dados_geo <- dados %>%
 
 # Identificar os casos em que a geocodificação falhou (NA)
 dados_na <- dados_geo %>%
-  filter(is.na(latitude) | is.na(longitude))
+  filter(is.na(`latitude...13`) | is.na(`longitude...14`))
+
+dados_geo <- dados_geo %>%
+  select(-c(11, 12))
+
 
 # Exibir os primeiros resultados
 head(dados_geo)
@@ -39,4 +43,4 @@ if (nrow(dados_na) > 0) {
 head(dados_geo)
 
 # Salvar o resultado atualizado em um novo arquivo
-write_xlsx(dados_geo, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/testando_pluscode.xlsx")
+write_xlsx(dados_geo, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/ajustar.xlsx")
