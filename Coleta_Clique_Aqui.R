@@ -323,7 +323,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
           
           # Verifica se houve duas ocorrências consecutivas
           if (contador_nao_encontrado >= 4) {
-            cat("\n\n🎉 Código finalizado. Fim da página!\n")
+            cat("\n\n🎉 Código irá finalizar daqui há pouco. Tenha calma!\n")
             break  # Encerra o loop ou o código inteiro
           }
         }
