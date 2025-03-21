@@ -405,7 +405,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Definir o local no início do script
-local <- "Petrolina"
+local <- "Juazeiro"
 
 # Função personalizada para remover duplicatas considerando múltiplas colunas
 remover_duplicatas <- function(dados, colunas) {
