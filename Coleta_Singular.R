@@ -405,7 +405,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Chamar a função para coletar dados
-dados_lojas_feira <- pegar_dados(local = "Feira de Santana", termo = "fornecedor de materiais de construção", scrolls = 2)
+dados_lojas_feira <- pegar_dados(local = "Petrolina", termo = "Fornecedor de produtos de limpeza", scrolls = 3)
 
 # Função personalizada para remover duplicatas considerando múltiplas colunas
 remover_duplicatas <- function(dados, colunas) {
@@ -422,5 +422,5 @@ colunas_para_verificar <- c("Loja", "Categoria", "Endereço", "Plus_Code", "Site
 dados_lojas_feira <- remover_duplicatas(dados_lojas_feira, colunas_para_verificar)
 
 # Exportar para Excel
-write_xlsx(dados_lojas_feira, "loc_dados_lojas_Fornecedo_de_constr_feira.xlsx")
+write_xlsx(dados_lojas_feira, "loc_dados_lojas_Fornecedor_Limpeza_petrolina.xlsx")
 
