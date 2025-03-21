@@ -177,23 +177,56 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
   search_box$sendKeysToElement(list(termo, key = "enter"))
   Sys.sleep(4)
   
+  # Contador de falhas
+  contador_falhas_xpath <- 0
+  
   # Tentar encontrar o elemento alvo com o SEGUNDO XPath primeiro
   elemento_alvo <- tryCatch({
     remDr$findElement(using = "xpath", "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[1]/div[1]/div[3]/div/a")
   }, error = function(e) {
-    cat("\n\n❌ Segundo XPath não encontrado. Tentando o primeiro XPath...\n")
-    # Tentar encontrar o elemento alvo com o PRIMEIRO XPath
+    cat("\n\n👁👄👁 Primeiro XPath não encontrado. Tentando o segundo XPath...\n")
     tryCatch({
       remDr$findElement(using = "xpath", "/html/body/div[1]/div[3]/div[8]/div[9]/div/div/div[1]/div[2]/div/div[1]/div/div/div[1]/div[1]/div[2]/div[3]/div/div/button")
     }, error = function(e) {
-      cat("\n\n❌ Primeiro XPath também não encontrado. Encerrando a função.\n")
+      cat("\n\n🚑 Segundo XPath também não encontrado. Incrementando contador de falhas...\n")
+      contador_falhas_xpath <<- contador_falhas_xpath + 1
       return(NULL)
     })
   })
   
+  # Verificar se o elemento foi encontrado
   if (is.null(elemento_alvo)) {
-    return(NULL)
+    cat("\n\n⚠️ Nenhum dos XPaths foi encontrado. Contador de falhas:", contador_falhas_xpath, "\n")
+    
+    # Se o contador de falhas atingir um limite, acionar a lógica de regressão de XPath
+    if (contador_falhas_xpath >= 2) {
+      cat("\n\n🤖 2 falhas consecutivas ao tentar encontrar o elemento. Acionando regressão de XPath...\n")
+      
+      # Lógica de regressão de XPath
+      if (length(xpaths_com_êxito) >= 6) {
+        xpath_num <- xpaths_com_êxito[length(xpaths_com_êxito) - 3]  # 3 XPaths antes
+        cat('\n\nRegressão de 3 XPath após falha. Coletando a partir do penúltimo XPath anterior com êxito:', xpath_num, "\n")
+        
+        # Aqui você pode tentar novamente encontrar o elemento com o XPath regredido
+        elemento_alvo <- tryCatch({
+          remDr$findElement(using = "xpath", xpath_num)
+        }, error = function(e) {
+          cat("\n\n🚑 XPath regredido também não encontrado. Encerrando a função...\n")
+          return(NULL)
+        })
+      }
+    }
+  } else {
+    # Resetar o contador de falhas se o elemento for encontrado
+    contador_falhas_xpath <- 0
+    cat("\n\n✅ Elemento encontrado com sucesso. Contador de falhas resetado.\n")
   }
+  
+  # Se o elemento ainda não foi encontrado após a regressão, encerrar a função
+  if (is.null(elemento_alvo)) {
+    cat("\n\n🤖 Nenhum XPath funcionou. Encerrando a função...\n")
+    return(dados_completos)
+  }        
   
   Sys.sleep(4)
   elemento_encontrado <- elemento_alvo$getElementText() %>% .[[1]] %>% str_remove("\n")
@@ -372,7 +405,7 @@ pegar_dados <- function(local = "", termo = "", scrolls = 0) {
 }
 
 # Definir o local no início do script
-local <- "Petrolina"
+local <- "Juazeiro"
 
 # Função personalizada para remover duplicatas considerando múltiplas colunas
 remover_duplicatas <- function(dados, colunas) {
@@ -388,12 +421,12 @@ colunas_para_verificar <- c("Loja", "Categoria", "Endereço", "Plus_Code", "Site
 # Lista de temas e respectivos nomes de arquivos
 temas <- c("Loja de materiais de construção", "Loja de artigos domésticos", "Loja de variedades", "Loja de utensílios de cozinha", "Atacadista de utilidades domésticas", 
            "Loja de Departamento", "Loja de presentes", "Atacadista", "Pet Shop", 
-           "Loja de suprimentos para animais de estimação")
+           "Loja de suprimentos para animais de estimação", "Fornecedor de produtos de limpeza", "Fornecedor de materiais de construção")
 
 nomes_arquivos <- c("loc_dados_lojas_materiaisdeconstr_ssa.xlsx", "loc_dados_lojas_artigosdomésticos_ssa.xlsx", "loc_dados_lojas_variedades_ssa.xlsx", "loc_dados_lojas_utensilios_cozinha_ssa.xlsx", 
                     "loc_dados_atacadista_utilidades_domesticas_ssa.xlsx", "loc_dados_lojas_departamento_ssa.xlsx", 
                     "loc_dados_lojas_presentes_ssa.xlsx", "loc_dados_atacadista_ssa.xlsx", 
-                    "loc_dados_pet_shop_ssa.xlsx", "loc_dados_suprimentos_animais_ssa.xlsx")
+                    "loc_dados_pet_shop_ssa.xlsx", "loc_dados_suprimentos_animais_ssa.xlsx", "loc_dados_Fornecedor_limpeza_ssa.xlsx", "loc_dados_fornecedor_construção_ssa.xlsx")
 
 # Gerar nomes de arquivos dinamicamente com base no local
 nomes_arquivos <- paste0("loc_dados_", 
