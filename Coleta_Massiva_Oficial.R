@@ -393,7 +393,7 @@ temas <- c("Loja de materiais de construção", "Loja de artigos domésticos", "
 nomes_arquivos <- c("loc_dados_lojas_materiaisdeconstr_ssa.xlsx", "loc_dados_lojas_artigosdomésticos_ssa.xlsx", "loc_dados_lojas_variedades_ssa.xlsx", "loc_dados_lojas_utensilios_cozinha_ssa.xlsx", 
                     "loc_dados_atacadista_utilidades_domesticas_ssa.xlsx", "loc_dados_lojas_departamento_ssa.xlsx", 
                     "loc_dados_lojas_presentes_ssa.xlsx", "loc_dados_atacadista_ssa.xlsx", 
-                    "loc_dados_pet_shop_ssa.xlsx", "loc_dados_suprimentos_animais_ssa.xlsx")
+                    "loc_dados_pet_shop_ssa.xlsx", "loc_dados_suprimentos_animais_ssa.xlsx", "loc_dados_Fornecedor de produtos de limpeza_ssa.xlsx", "loc_dados_fornecedor de materiais de construção")
 
 # Gerar nomes de arquivos dinamicamente com base no local
 nomes_arquivos <- paste0("loc_dados_", 
