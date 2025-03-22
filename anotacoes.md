@@ -4,7 +4,7 @@ Aqui consta meus delírios enquanto leio os scripts, testo algumas coisas, alter
 
 ## Mudanças gerais
 
--   Criei o projeto `Web-Scraping-Maps-Rstudio.Rprof` para corrigir os caminhos *futuramente*, não fiz ainda
+-   Criei o projeto `Web-Scraping-Maps-Rstudio.Rproj` para corrigir os caminhos *futuramente*, não fiz ainda
 
 -   Adicionei os scripts `definicoes.R` e `funcoes.R`:
 
