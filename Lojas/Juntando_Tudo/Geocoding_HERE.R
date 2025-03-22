@@ -6,12 +6,15 @@ library(dplyr)
 library(writexl)
 library(tidyr)
 
-# Definir API Key da HERE Maps (Primeira tentativa)
+# Definir API Key da HERE Maps
 api_key <- "8__EX014cinJzotz2TuJPXeoWKB9v_ZnPQjiR-3lJvA"
 
-# Função para geocodificação usando a API da HERE Maps
-geocode_here <- function(endereco) {
-  if (is.na(endereco) || endereco == "") return(c(NA, NA))  # Evita chamadas desnecessárias
+# Função para geocodificação com mensagens de progresso
+geocode_here <- function(endereco, idx) {
+  if (is.na(endereco) || endereco == "") return(NA)  # Evita chamadas desnecessárias
+  
+  # Mensagem de progresso
+  cat(paste("Processando endereço", idx, ":", endereco, "\n"))
   
   url <- paste0("https://geocode.search.hereapi.com/v1/geocode?q=", 
                 URLencode(endereco), "&apiKey=", api_key)
@@ -22,32 +25,61 @@ geocode_here <- function(endereco) {
     dados <- content(resposta, as = "parsed", type = "application/json")
     
     if (length(dados$items) > 0) {
-      latitude <- dados$items[[1]]$position$lat
-      longitude <- dados$items[[1]]$position$lng
-      return(c(latitude, longitude))
+      return(dados$items[[1]]$position)  # Retorna as coordenadas completas
     }
   }
   
-  return(c(NA, NA))
+  return(NA)
 }
 
-# Caminho do arquivo
-arquivo_xlsx <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/Dados_Combinados_Unicos_Feira_SSA.xlsx"
+# Carregar os dados do arquivo
+dados <- read_xlsx(arquivo_xlsx)
 
-# Leia o arquivo
-dados <- read_excel(arquivo_xlsx)
-
-# **Aplicar a geocodificação SOMENTE onde latitude e longitude são NA**
+# Aplicar a geocodificação SOMENTE onde a coluna "Loc" está vazia com mensagens de progresso
 dados_geo <- dados %>%
-  mutate(coord = ifelse(is.na(latitude) | is.na(longitude),
-                        list(geocode_here(`Endereço`)), 
-                        list(c(latitude, longitude)))) %>%
+  rowwise() %>%  # Processar linha por linha
+  mutate(coord = ifelse(is.na(Loc), 
+                        list(geocode_here(`Endereço`, row_number())),  # Adiciona índice para progresso
+                        list(Loc))) %>%
   unnest_wider(coord, names_sep = "_") %>%
-  rename(latitude = coord_1, longitude = coord_2)
+  rename(latitude = coord_lat, longitude = coord_lng) %>%  # Renomeando as colunas corretamente
+  ungroup()  # Remover o agrupamento após o mutate
 
 # Identificar falhas após a primeira tentativa
 dados_na <- dados_geo %>%
   filter(is.na(latitude) | is.na(longitude))
+
+# Função para excluir a coluna coord_1
+remover_coord_1 <- function(dados) {
+  dados <- dados %>%
+    select(-coord_1)  # Remove a coluna coord_1
+  return(dados)
+}
+
+# Aplicar a função no DataFrame 'dados_geo'
+dados_geo <- remover_coord_1(dados_geo)
+
+# Função para combinar latitude e longitude na coluna Loc, apenas se estiver vazia
+combinar_lat_lon_em_loc <- function(dados) {
+  dados <- dados %>%
+    mutate(Loc = ifelse(is.na(Loc) | Loc == "", paste(latitude, longitude, sep = ", "), Loc))  # Só preenche se Loc estiver vazio
+  return(dados)
+}
+
+# Aplicar a função no DataFrame 'dados_geo'
+dados_geo <- combinar_lat_lon_em_loc(dados_geo)
+
+
+# Remover as colunas latitude e longitude
+dados_geo <- dados_geo %>%
+  select(-latitude, -longitude)
+
+
+
+
+
+
+
 
 # **Segunda tentativa de geocodificação (Apenas para falhas)**
 if (nrow(dados_na) > 0) {
@@ -55,9 +87,12 @@ if (nrow(dados_na) > 0) {
   # Nova API Key da HERE Maps (Segunda tentativa)
   api_key <- "gwuKJLfxYYmARME7OlC7rIFjJgweQhI_1nFB8QS3DAs"
   
-  # Função para tentar geocodificar novamente
-  geocode_here_retry <- function(endereco) {
-    if (is.na(endereco) || endereco == "") return(c(NA, NA))  # Evita chamadas desnecessárias
+  # Função para tentar geocodificar novamente com mensagens de progresso
+  geocode_here_retry <- function(endereco, idx) {
+    if (is.na(endereco) || endereco == "") return(NA)  # Evita chamadas desnecessárias
+    
+    # Mensagem de progresso
+    cat(paste("Tentando novamente o endereço", idx, ":", endereco, "\n"))
     
     url <- paste0("https://geocode.search.hereapi.com/v1/geocode?q=", 
                   URLencode(endereco), "&apiKey=", api_key)
@@ -68,21 +103,19 @@ if (nrow(dados_na) > 0) {
       dados <- content(resposta, as = "parsed", type = "application/json")
       
       if (length(dados$items) > 0) {
-        latitude <- dados$items[[1]]$position$lat
-        longitude <- dados$items[[1]]$position$lng
-        return(c(latitude, longitude))
+        return(dados$items[[1]]$position)  # Retorna as coordenadas completas
       }
     }
     
-    return(c(NA, NA))
+    return(NA)
   }
   
-  # Aplicar geocodificação somente nas falhas
+  # Aplicar geocodificação somente nas falhas com índice de progresso
   dados_na_corrigidos <- dados_na %>%
     rowwise() %>%
-    mutate(coord = list(geocode_here_retry(`Endereço`))) %>%
+    mutate(coord = list(geocode_here_retry(`Endereço`, row_number()))) %>%
     unnest_wider(coord, names_sep = "_") %>%
-    rename(latitude_corrigido = coord_1, longitude_corrigido = coord_2)
+    rename(latitude_corrigido = coord_lat, longitude_corrigido = coord_lng)
   
   # **Corrigir a fusão dos dados para evitar colunas duplicadas**
   dados_geo <- dados_geo %>%
@@ -100,10 +133,10 @@ arquivo_saida <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando
 write_xlsx(dados_geo, arquivo_saida)
 
 # Exibir resumo do processo
-print(paste("Total de endereços no dataset original:", nrow(dados)))
-print(paste("Endereços sem coordenadas na primeira tentativa:", nrow(dados_na)))
-print(paste("Endereços corrigidos na segunda tentativa:", sum(!is.na(dados_geo$latitude))))
-print(paste("Total de endereços geocodificados com sucesso:", sum(!is.na(dados_geo$latitude))))
+cat("Total de endereços no dataset original:", nrow(dados), "\n")
+cat("Endereços sem coordenadas na primeira tentativa:", nrow(dados_na), "\n")
+cat("Endereços corrigidos na segunda tentativa:", sum(!is.na(dados_geo$latitude)), "\n")
+cat("Total de endereços geocodificados com sucesso:", sum(!is.na(dados_geo$latitude)), "\n")
 
 # Salvar o resultado atualizado
-write_xlsx(dados_geo, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando Tudo/Atualizando_here_coord.xlsx")
+write_xlsx(dados_geo, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando_Tudo/Atualizando_here_coord.xlsx")
