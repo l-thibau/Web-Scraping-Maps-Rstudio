@@ -131,7 +131,9 @@ remover_duplicatas_2 <- function(dados, colunas = NULL) {
 
 ```
 
-Nesse caso que verifiquei, funcionou normal:
+Nesse caso que verifiquei [^2], funcionou normal:
+
+[^2]: Verifiquei *de olho*, no caso. Se quiser verificar exatamente cria um dataset pra cada e testa no `identical()`, tipo `identical(dataset_1, dataset_2)`.
 
 ```{r}
 
