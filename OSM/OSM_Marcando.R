@@ -10,7 +10,7 @@ library(stringr)
 library(tidyr)
 
 # Definir caminho do arquivo
-caminho <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/OSM/Lojas_Unicas_Loc_Emails_coord.xlsx"
+caminho <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/OSM/Book1.xlsx"
 arquivo <- caminho
 
 # Ler o arquivo Excel
@@ -62,3 +62,6 @@ mapa <- leaflet(df_sf) %>%
 
 # Exibir mapa
 mapa
+
+
+
