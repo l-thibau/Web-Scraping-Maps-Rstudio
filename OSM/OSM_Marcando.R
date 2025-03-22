@@ -1,25 +1,39 @@
-# Instalar pacotes caso não estejam instalados
-if (!require(readxl)) install.packages("readxl", dependencies = TRUE)
-if (!require(dplyr)) install.packages("dplyr", dependencies = TRUE)
-if (!require(sf)) install.packages("sf", dependencies = TRUE)
-if (!require(leaflet)) install.packages("leaflet", dependencies = TRUE)
-
 # Carregar pacotes
 library(readxl)
+library(osrm)
 library(dplyr)
 library(sf)
 library(leaflet)
+library(writexl)
+library(TSP)
+library(stringr)
+library(tidyr)
 
 # Definir caminho do arquivo
-caminho <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas/Juntando_Tudo"
-arquivo <- file.path(caminho, "Unindo_coord.xlsx")
+caminho <- "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/OSM/Book1.xlsx"
+arquivo <- caminho
 
-# Ler os dados
-df <- read_excel(arquivo)
+# Ler o arquivo Excel
+cat("Lendo o arquivo Excel...\n")
+df <- read_excel(caminho)
 
-# Renomear colunas para garantir consistência
+# Criar colunas "latitude" e "longitude" a partir da coluna "Loc"
+df <- df %>%
+  separate(Loc, into = c("latitude", "longitude"), sep = ", ", convert = TRUE)
+
+# Renomear colunas
 df <- df %>%
   rename(Latitude = latitude, Longitude = longitude, Loja = Loja)
+
+# Remover pontos com coordenadas NA
+cat("Removendo pontos com coordenadas NA...\n")
+df <- df %>% filter(!is.na(Latitude) & !is.na(Longitude))
+
+# Verificar se algum ponto foi removido
+num_removidos <- nrow(read_excel(arquivo)) - nrow(df)
+if (num_removidos > 0) {
+  cat("Atenção: ", num_removidos, " pontos com NA foram removidos da rota.\n")
+}
 
 # Converter Latitude e Longitude para números (evita erros de coerção)
 df <- df %>%
@@ -48,4 +62,6 @@ mapa <- leaflet(df_sf) %>%
 
 # Exibir mapa
 mapa
+
+
 
