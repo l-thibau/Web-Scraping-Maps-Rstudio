@@ -57,7 +57,7 @@ Contêm todas as funções utilizadas nos scripts `coleta_singular.R`, no moment
 
 Os trechos marcados contêm ou algum problema lógico no *debug* do código, no próprio processo de coleta ou usa de um método ruim (ineficiente ou que ***dificulta*** nossa vida).
 
-No trecho de exemplo, além do *tamanho* (há vários `if`s ENORMES) e aninhamento de `if`s (PÉSSIMO pra debugar, pra entender a lógica, pra dar manutenção), há dois erros no *debug* do código, pois a mensagem `🤖 2 falhas consecutivas ao tentar encontrar o elemento. Acionando regressão de XPath...` se repete de forma indevida, pelo que vi, e parece que toda vez que o processo simplesmente inicia bem, a mensagem `✅ Elemento encontrado com sucesso. Contador de falhas resetado.` é printada (não faz sentido dizer que "Contador de falhas" foi resetado aqui, mas toda vez que laço repetir, não? Não investiguei essa lógica tão a fundo, foi o que reparei observando a coleta rodando e lendo o que os meus olhos aguentaram, visão de velho).
+No trecho de exemplo, além do *tamanho* (há vários `if`s ENORMES NO SCRIPT NO GERAL) e aninhamento de `if`s (PÉSSIMO pra debugar, pra entender a lógica, pra dar manutenção), há dois erros no *debug* do código, pois a mensagem `🤖 2 falhas consecutivas ao tentar encontrar o elemento. Acionando regressão de XPath...` se repete de forma indevida, pelo que vi, e parece que toda vez que o processo simplesmente inicia bem, a mensagem `✅ Elemento encontrado com sucesso. Contador de falhas resetado.` é printada (não faz sentido dizer que "Contador de falhas" foi resetado aqui, mas toda vez que o laço repetir, não? Não investiguei essa lógica tão a fundo, foi o que reparei observando a coleta rodando e lendo o que os meus olhos aguentaram, visão de velho).
 
 ------------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ No trecho de exemplo, além do *tamanho* (há vários `if`s ENORMES) e aninhamen
 
 A função é criada da seguinte forma:
 
-`pegar_dados \<- function(local = "", termo = "", scrolls = 0)`
+`pegar_dados <- function(local = "", termo = "", scrolls = 0)`
 
 O problema é que o argumento "scrolls" não está funcionando *como deveria*, dado o nome do argumento. O papel do `for()` e `while()` estão confusos!
 
