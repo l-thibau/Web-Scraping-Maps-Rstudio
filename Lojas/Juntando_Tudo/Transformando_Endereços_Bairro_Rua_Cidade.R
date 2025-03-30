@@ -15,22 +15,12 @@ arquivos <- list.files(caminho_pasta, pattern = "\\.xlsx$", full.names = TRUE)
 dados <- arquivos %>%
   map_df(~read_xlsx(.x) %>% mutate(across(everything(), as.character)))
 
-# Filtrar as lojas onde algum desses campos está ausente (NA)
-lojas_com_valores_faltantes <- dados %>%
-  filter(is.na(Bairro) | Bairro == "NA" |
-           is.na(`Rua/Aven`) | `Rua/Aven` == "NA" |
-           is.na(Cidade) | Cidade == "NA")
-
-# Exibir as lojas com valores ausentes
-print(lojas_com_valores_faltantes)
-
 # Função para extrair informações de endereço
 extrair_endereco <- function(Endereço) {
   rua_aven <- str_extract(Endereço, "^[^-]+")
   bairro <- str_extract(Endereço, "(?<=-\\s)[^,]+")
   cidade <- str_extract(Endereço, "(?<=,\\s)[^-]+")
   
-  # Verificar se bairro ou cidade contêm números, hífens, texto único 'BA' ou apenas uma letra
   if (!is.na(bairro) && (str_detect(bairro, "[0-9,-]") || str_detect(bairro, "^BA$") || str_length(str_trim(bairro)) == 1)) {
     bairro <- "NA"
   }
@@ -39,7 +29,6 @@ extrair_endereco <- function(Endereço) {
     cidade <- "NA"
   }
   
-  # Verificar se o bairro está vazio e substituir por "NA"
   if (is.na(bairro) || str_trim(bairro) == "") {
     bairro <- "NA"
   }
@@ -53,36 +42,32 @@ extrair_endereco <- function(Endereço) {
 
 # Função para extrair bairro e cidade do Plus Code
 extrair_bairro_cidade <- function(plus_code) {
-  # Regex para capturar o bairro e a cidade
-  padrao <- "[A-Z0-9+]+\\s([^,]+),\\s([^-]+)\\s-\\s[A-Z]{2}"
-  
-  # Extrair bairro e cidade
-  bairro <- str_match(plus_code, padrao)[,2]
-  cidade <- str_match(plus_code, padrao)[,3]
-  
-  # Retornar como uma lista
+  padrao <- "[A-Z0-9+]+\\s([^,]+),\\s([^\\-]+)"
+  match <- str_match(plus_code, padrao)
+  bairro <- str_trim(match[, 2])
+  cidade <- str_trim(match[, 3])
   return(list(bairro = bairro, cidade = cidade))
 }
 
-# Função para transformar em "NA" se começar com termos específicos
-transformar_para_NA <- function(texto) {
-  # Verificar se o valor é NA
-  if (is.na(texto)) {
-    return("NA")
-  }
-  
-  # Lista de termos que devem ser transformados em "NA"
-  termos_na <- c("^r\\.", "^rua", "^av\\.", "^aven\\.", "^avenida", "^s/n", "^sn", "^na")
-  
-  # Verificar se o texto começa com algum dos termos (ignorando maiúsculas/minúsculas)
-  if (any(str_detect(str_to_lower(texto), termos_na))) {
-    return("NA")
-  }
-  
-  return(texto)
+# Fallback: extrair cidade de Plus Code simples
+extrair_cidade_de_pluscode_simples <- function(plus_code) {
+  cidade <- str_extract(plus_code, "(?<=^[A-Z0-9+]{7}\\s)[^,]+")
+  return(str_trim(cidade))
 }
 
-# Aplicar a extração de endereço diretamente nas colunas já existentes
+# VERSÃO VETORIZADA da função para transformar em "NA"
+transformar_para_NA <- function(texto) {
+  termos_na <- c("^r\\.", "^rua", "^av\\.", "^aven\\.", "^avenida", "^s/n", "^sn", "^na")
+  texto_corrigido <- ifelse(
+    is.na(texto) | str_trim(texto) == "" |
+      str_detect(str_to_lower(texto), str_c(termos_na, collapse = "|")),
+    "NA",
+    texto
+  )
+  return(texto_corrigido)
+}
+
+# PROCESSAMENTO PRINCIPAL
 dados <- dados %>%
   rowwise() %>%
   mutate(
@@ -91,23 +76,26 @@ dados <- dados %>%
     Bairro = endereco_extraido$bairro,
     Cidade = endereco_extraido$cidade
   ) %>%
-  select(-endereco_extraido)  # Remover a lista de endereço extraído após a alteração
-
-# Aplicar a função transformar_para_NA nas colunas Bairro e Cidade
-dados <- dados %>%
+  ungroup() %>%
+  select(-endereco_extraido) %>%
   mutate(
     Bairro = transformar_para_NA(Bairro),
     Cidade = transformar_para_NA(Cidade)
-  )
-
-# Verificar e corrigir NAs usando o Plus Code, alterando diretamente as colunas existentes
-dados <- dados %>%
+  ) %>%
   rowwise() %>%
   mutate(
-    Bairro = ifelse(is.na(Bairro) || Bairro == "NA", extrair_bairro_cidade(Plus_Code)$bairro, Bairro),
-    Cidade = ifelse(is.na(Cidade) || Cidade == "NA", extrair_bairro_cidade(Plus_Code)$cidade, Cidade)
+    Bairro = ifelse(is.na(Bairro) | Bairro == "" | Bairro == "NA",
+                    extrair_bairro_cidade(Plus_Code)$bairro, Bairro),
+    Cidade = ifelse(is.na(Cidade) | Cidade == "" | Cidade == "NA",
+                    extrair_bairro_cidade(Plus_Code)$cidade, Cidade)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    Cidade = ifelse(is.na(Cidade) | Cidade == "" | Cidade == "NA",
+                    extrair_cidade_de_pluscode_simples(Plus_Code),
+                    Cidade)
   )
 
-# Salvar trabalho
+# Salvar resultado final
 write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas.xlsx")
 
