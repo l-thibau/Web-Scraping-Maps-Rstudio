@@ -42,17 +42,38 @@ extrair_endereco <- function(Endereço) {
 
 # Função para extrair bairro e cidade do Plus Code
 extrair_bairro_cidade <- function(plus_code) {
-  padrao <- "[A-Z0-9+]+\\s([^,]+),\\s([^\\-]+)"
-  match <- str_match(plus_code, padrao)
-  bairro <- str_trim(match[, 2])
-  cidade <- str_trim(match[, 3])
+  partes <- str_match(plus_code, "[A-Z0-9+]+\\s([^,]+),\\s([^\\-]+)")
+  n_partes_validas <- ifelse(!is.na(partes[,2]) & !is.na(partes[,3]), 2, 0)
+  
+  if (n_partes_validas == 2) {
+    # Testar se há traço após o segundo grupo (indicando estado)
+    estado_presente <- str_detect(plus_code, "-\\s*[A-Z]{2}$")
+    if (estado_presente) {
+      # Plus code completo: bairro + cidade + estado
+      bairro <- str_trim(partes[,2])
+      cidade <- str_trim(partes[,3])
+    } else {
+      # Plus code incompleto: cidade + estado → ignorar o bairro
+      bairro <- "NA"
+      cidade <- str_trim(partes[,2])
+    }
+  } else {
+    bairro <- "NA"
+    cidade <- "NA"
+  }
+  
   return(list(bairro = bairro, cidade = cidade))
 }
 
 # Fallback: extrair cidade de Plus Code simples
 extrair_cidade_de_pluscode_simples <- function(plus_code) {
   cidade <- str_extract(plus_code, "(?<=^[A-Z0-9+]{7}\\s)[^,]+")
-  return(str_trim(cidade))
+  cidade <- str_trim(cidade)
+  # Verifica se a cidade extraída contém apenas uma palavra (possivelmente um estado), ignora nesses casos
+  if (is.na(cidade) || str_detect(cidade, "^BA$|^SP$|^RJ$|^MG$|^\\w{1,2}$")) {
+    return("NA")
+  }
+  return(cidade)
 }
 
 # VERSÃO VETORIZADA da função para transformar em "NA"
@@ -67,7 +88,7 @@ transformar_para_NA <- function(texto) {
   return(texto_corrigido)
 }
 
-# PROCESSAMENTO PRINCIPAL
+# PROCESSAMENTO PRINCIPAL (corrigido)
 dados <- dados %>%
   rowwise() %>%
   mutate(
@@ -84,18 +105,24 @@ dados <- dados %>%
   ) %>%
   rowwise() %>%
   mutate(
-    Bairro = ifelse(is.na(Bairro) | Bairro == "" | Bairro == "NA",
-                    extrair_bairro_cidade(Plus_Code)$bairro, Bairro),
+    bairro_cidade = list(extrair_bairro_cidade(Plus_Code)),
     Cidade = ifelse(is.na(Cidade) | Cidade == "" | Cidade == "NA",
-                    extrair_bairro_cidade(Plus_Code)$cidade, Cidade)
+                    bairro_cidade$cidade, Cidade),
+    Bairro = ifelse((is.na(Bairro) | Bairro == "" | Bairro == "NA") & 
+                      bairro_cidade$bairro != "NA",
+                    bairro_cidade$bairro, Bairro)
   ) %>%
   ungroup() %>%
+  select(-bairro_cidade) %>%
+  rowwise() %>%
   mutate(
     Cidade = ifelse(is.na(Cidade) | Cidade == "" | Cidade == "NA",
                     extrair_cidade_de_pluscode_simples(Plus_Code),
                     Cidade)
-  )
+  ) %>%
+  ungroup()
+
+
 
 # Salvar resultado final
 write_xlsx(dados, "C:/Users/leona/Github/Web-Scraping-Maps-Rstudio/Lojas.xlsx")
-
