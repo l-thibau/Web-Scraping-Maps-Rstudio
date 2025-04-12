@@ -419,11 +419,11 @@ remover_duplicatas <- function(dados, colunas) {
 colunas_para_verificar <- c("Loja", "Categoria", "Endereço", "Plus_Code", "Site", "Celular", "Estrelas")
 
 # Lista de temas e respectivos nomes de arquivos
-temas <- c("Loja de materiais de construção", "Loja de artigos domésticos", "Loja de variedades", "Loja de utensílios de cozinha", "Atacadista de utilidades domésticas", 
+temas <- c("Loja de materiais de construção", "Mercado", "Supermercado", "Loja de artigos domésticos", "Loja de variedades", "Loja de utensílios de cozinha", "Atacadista de utilidades domésticas", 
            "Loja de Departamento", "Loja de presentes", "Atacadista", "Pet Shop", 
            "Loja de suprimentos para animais de estimação", "Fornecedor de produtos de limpeza", "Fornecedor de materiais de construção")
 
-nomes_arquivos <- c("loc_dados_lojas_materiaisdeconstr_ssa.xlsx", "loc_dados_lojas_artigosdomésticos_ssa.xlsx", "loc_dados_lojas_variedades_ssa.xlsx", "loc_dados_lojas_utensilios_cozinha_ssa.xlsx", 
+nomes_arquivos <- c("loc_dados_lojas_materiaisdeconstr_ssa.xlsx", "loc_dados_mercado_ssa.xlsx", "loc_dados_supermercado_ssa.xlsx", "loc_dados_lojas_artigosdomésticos_ssa.xlsx", "loc_dados_lojas_variedades_ssa.xlsx", "loc_dados_lojas_utensilios_cozinha_ssa.xlsx", 
                     "loc_dados_atacadista_utilidades_domesticas_ssa.xlsx", "loc_dados_lojas_departamento_ssa.xlsx", 
                     "loc_dados_lojas_presentes_ssa.xlsx", "loc_dados_atacadista_ssa.xlsx", 
                     "loc_dados_pet_shop_ssa.xlsx", "loc_dados_suprimentos_animais_ssa.xlsx", "loc_dados_fornecedor_limpeza_ssa.xlsx", "loc_dados_fornecedor_construcao_ssa.xlsx")
